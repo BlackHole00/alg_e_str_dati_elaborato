@@ -6,6 +6,7 @@ Il progetto usa il linguaggio `C99` ed usa il sistema di build `CMake`. Il proge
 - un compilatore `C` (`gcc`/`clang`/`msvc`)
 - `CMake`
 - `make` o `ninja` (consigliato) su macchine unix-like
+  
 
 E'stato inoltre implementato il debugging attraverso l'editor di testo `VSCode`. Si nota tuttavia che questa funzionalita'e'attualmente funzionante solo so S.O. unix-like e toolchain `lldb`. Questo verra'risolto nel futuro.
 Seguono i programmi da avere installati ed aggiunti al path:
@@ -15,6 +16,7 @@ Si nota subito che molti ide (quali `CLion` e `Visual Studio`) possono direttame
 
 Seguono i comandi da eseguire per buildare il progetto (si nota che il file eseguibile viene posto in una locazione diversa a seconda della piattaforma):
 ```sh
+mkdir build
 cd build
 cmake ..
 cmake --build .
@@ -22,11 +24,13 @@ cmake --build .
 
 Se si vuole utilizzare le funzionalita'di debug usare i seguenti comandi:
 ```sh
+mkdir build
 cd build
 cmake -G"Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
 ```
 O, preferibilmente se `Ninja` e'installato:
 ```sh
+mkdir build
 cd build
 cmake -G"Ninja Multi-Config" ..
 ```

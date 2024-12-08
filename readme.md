@@ -2,13 +2,12 @@
 TODO
 
 # Building
-Il progetto usa il linguaggio `C99` ed usa il sistema di build `CMake`. Il progetto richiede quindi di aver installato ed aggiunto al path i seguenti programmi:
+Il progetto usa il linguaggio `C99` ed usa il sistema di build `CMake`. Il progetto richiede quindi di aver installati ed aggiunti al path i seguenti programmi:
 - un compilatore `C` (`gcc`/`clang`/`msvc`)
 - `CMake`
 - `make` o `ninja` (consigliato) su macchine unix-like
-  
 
-E'stato inoltre implementato il debugging attraverso l'editor di testo `VSCode`. Si nota tuttavia che questa funzionalita'e'attualmente funzionante solo so S.O. unix-like e toolchain `lldb`. Questo verra'risolto nel futuro.
+E'stato inoltre implementato il debugging attraverso l'editor di testo `VSCode`. Si nota tuttavia che questa funzionalita'e'attualmente funzionante solo su S.O. unix-like e toolchain `lldb`. Questo verra'risolto nel futuro.
 Seguono i programmi da avere installati ed aggiunti al path:
 - `lldb`
 

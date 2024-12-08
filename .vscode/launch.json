@@ -1,0 +1,42 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug (Unix-Ninja-LLDB)",
+            "program": "${workspaceFolder}/build/Debug/AlgoritmiEStruttureDati_Elaborato",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Build & Debug (Unix-Ninja-LLDB)",
+            "program": "${workspaceFolder}/build/Debug/AlgoritmiEStruttureDati_Elaborato",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build (Unix-Ninja)"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug (Unix-Make-LLDB)",
+            "program": "${workspaceFolder}/build/AlgoritmiEStruttureDati_Elaborato",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Build & Debug (Unix-Make-LLDB)",
+            "program": "${workspaceFolder}/build/AlgoritmiEStruttureDati_Elaborato",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build (Unix-Make)"
+        },
+    ]
+}

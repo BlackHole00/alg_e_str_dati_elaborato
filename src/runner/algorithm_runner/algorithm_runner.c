@@ -76,6 +76,7 @@ Algorithm_Runner_Result algorithmrunner_create(
 	runner->algorithms_count = descriptor->algorithms_count;
 	runner->element_count_incrementer = descriptor->element_count_incrementer;
 	runner->runs_per_test = descriptor->runs_per_test;
+	runner->outputs_did_write_first_line = false;
 
 	return ALGORITHM_RUNNER_RESULT_SUCCESS;
 }

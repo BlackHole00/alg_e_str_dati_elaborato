@@ -9,6 +9,6 @@ add_executable(AlgoritmiEStruttureDati_Elaborato
     src/algorithm_runner/algorithm_runner.c
 )
 target_include_directories(AlgoritmiEStruttureDati_Elaborato PUBLIC
-    src/algorithm_runner
+    src
 )
 

@@ -5,10 +5,10 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED true)
 
 add_executable(AlgoritmiEStruttureDati_Elaborato
-    src/main.c
-    src/algorithm_runner/algorithm_runner.c
+    src/runner/main.c
+    src/runner/algorithm_runner/algorithm_runner.c
 )
 target_include_directories(AlgoritmiEStruttureDati_Elaborato PUBLIC
-    src
+    src/runner
 )
 

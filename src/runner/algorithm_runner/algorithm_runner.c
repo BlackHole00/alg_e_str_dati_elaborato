@@ -281,9 +281,9 @@ static Algorithm_Runner_Result algorithmrunner_test_algorithm_with_array(
 	struct timespec start_time;
 	struct timespec end_time;
 
-	clock_gettime(0, &start_time);
+	clock_gettime(CLOCK_MONOTONIC_RAW, &start_time);
 	algorithm->algorithm_callback(array, element_count, &test_stats->stats);
-	clock_gettime(0, &end_time);
+	clock_gettime(CLOCK_MONOTONIC_RAW, &end_time);
 
 	if (!check_if_sorted(array, element_count)) {
 		return ALGORITHM_RUNNER_RESULT_SORTING_ERROR;

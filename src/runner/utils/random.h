@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+	@fn random_int64
+	@brief Generates a random int64_t number
+	@returns The generated number
+*/
 static inline int64_t random_int64() {
 	int64_t high = rand();
 	int64_t low = rand();

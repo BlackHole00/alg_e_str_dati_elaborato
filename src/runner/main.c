@@ -24,22 +24,21 @@ void insertion_sort(int64_t* array, size_t array_length, Algorithm_Stats* statis
 	}
 }
 
+const Algorithm_Runner_Descriptor runner_configuration = (Algorithm_Runner_Descriptor) {
+	.algorithms_count = 1,
+	.algorithms = &(Algorithm){
+		.algorithm_callback = insertion_sort,
+		.name = "Insertion sort",
+	},
+	.element_count_incrementer = linear_scale,
+	.single_test_stats_output_file = "results/single_test_results.csv",
+	.average_stats_output_file = "results/average_results.csv",
+	.runs_per_test = 16
+};
+
 int main() {
 	Algorithm_Runner runner;
-	Algorithm_Runner_Result runner_creation_result = algorithmrunner_create(
-		&runner,
-		&(Algorithm_Runner_Descriptor){
-			.algorithms_count = 1,
-			.algorithms = &(Algorithm){
-				.algorithm_callback = insertion_sort,
-				.name = "Insertion sort",
-			},
-			.element_count_incrementer = linear_scale,
-			.single_test_stats_output_file = "results/single_test_results.csv",
-			.average_stats_output_file = "results/average_results.csv",
-			.runs_per_test = 16
-		}
-	);
+	Algorithm_Runner_Result runner_creation_result = algorithmrunner_create(&runner, &runner_configuration);
 	if (runner_creation_result != ALGORITHM_RUNNER_RESULT_SUCCESS) {
 		fprintf(stderr, "Could not create an algorithm runner. Got error code %d.\n", runner_creation_result);
 		return -1;

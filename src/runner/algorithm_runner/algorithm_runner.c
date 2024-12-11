@@ -6,22 +6,52 @@
 #include <time.h>
 #include <utils/random.h>
 
+/**
+	@struct Algorithm_Extended_Stats
+	@brief INTERNAL. Describes the statistics related to a single test or
+	the average of multiple of them.
+*/
 typedef struct Algorithm_Extended_Stats {
 	Algorithm_Stats stats;
 	uint64_t nanoseconds_taken;
 } Algorithm_Extended_Stats;
 
+/**
+	@fn algorithmrunner_check_descriptor
+	@brief INTERNAL. Checks if a given `Algorithm_Runner_Descriptor` is 
+	valid.
+*/
 static bool algorithmrunner_check_descriptor(const Algorithm_Runner_Descriptor* descriptor);
+
+/**
+	@fn algorithmrunner_test_algorithm
+	@brief INTERNAL. Benchmarks and tests a single algorithm. Writes the
+	results (both of single tests and averages) in the specified files.
+*/
 static Algorithm_Runner_Result algorithmrunner_test_algorithm(
 	const Algorithm_Runner* runner,
 	const Algorithm* algorithm
 );
+
+/**
+	@fn algorithmrunner_test_algorithm_with_elements
+	@brief INTERNAL. Benchmarks and tests a given algorithm with an array of
+	the specified length. Writes the results of the single tests to the
+	specified output files, but writes the average results to the specified 
+	pointer.
+*/
 static Algorithm_Runner_Result algorithmrunner_test_algorithm_with_elements(
 	const Algorithm_Runner* runner,
 	const Algorithm* algorithm,
 	size_t element_count,
 	Algorithm_Extended_Stats* average_stats
 );
+
+/**
+	@fn algorithmrunner_test_algorithm_with_array
+	@brief INTERNAL. Benchmarks and tests a given algorithm with a given
+	array. Writes the resulting statistics to the specified pointer.
+*/
 static Algorithm_Runner_Result algorithmrunner_test_algorithm_with_array(
 	const Algorithm_Runner* runner,
 	const Algorithm* algorithm,
@@ -29,16 +59,35 @@ static Algorithm_Runner_Result algorithmrunner_test_algorithm_with_array(
 	size_t element_count,
 	Algorithm_Extended_Stats* test_stats
 );
+
+/**
+	@fn algorithmrunner_publish_algorithm_change
+	@brief INTERNAL. Publishes a change of algorithm to the output files.
+	This practically writes an empty line (if the file is not empty)
+	followed by a line containing only the name of the algorithm.
+*/
 static void algorithmrunner_publish_algorithm_change(
 	Algorithm_Runner* runner,
 	const Algorithm* new_algorithm
 );
+
+/**
+	@fn algorithmrunner_publish_average_stats
+	@brief INTERNAL. Publishes the average stats of a series of test related
+	to an algorithm to the related output file.
+*/
 static void algorithmrunner_publish_average_stats(
 	const Algorithm_Runner* runner,
 	const Algorithm* algorithm,
 	size_t element_count,
 	const Algorithm_Extended_Stats* stats
 );
+
+/**
+	@fn algorithmrunner_publish_single_test_stats
+	@brief INTERNAL. Publishes the results of a single test related to an
+	algorithm to the related output file.
+*/
 static void algorithmrunner_publish_single_test_stats(
 	const Algorithm_Runner* runner,
 	const Algorithm* algorithm,
@@ -46,8 +95,23 @@ static void algorithmrunner_publish_single_test_stats(
 	uint64_t test_number,
 	const Algorithm_Extended_Stats* stats
 );
+
+/**
+	@fn algorithmrunner_flush_outputs
+	@brief INTERNAL. Flushes all the output files.
+*/
 static void algorithmrunner_flush_outputs(const Algorithm_Runner* runner);
+
+/**
+	@fn populate_array
+	@brief INTERNAL. Populates the given array with random values.
+*/
 static void populate_array(int64_t* array, size_t array_size);
+
+/**
+	@fn check_if_sorted
+	@brief INTERNAL. Checks if the given array is sorted
+*/
 static bool check_if_sorted(int64_t* array, size_t array_size);
 
 Algorithm_Runner_Result algorithmrunner_create(
@@ -133,6 +197,8 @@ static Algorithm_Runner_Result algorithmrunner_test_algorithm(
 	const Algorithm_Runner* runner,
 	const Algorithm* algorithm
 ) {
+	// NOTE: By resetting the random number generator we are providing a way
+	// to test the various algorithms with the same arrays every time.
 	srand(0);
 
 	size_t element_count = 1;

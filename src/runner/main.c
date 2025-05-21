@@ -9,31 +9,28 @@ bool linear_scale(size_t* prev) {
 	return *prev <= 3000;
 }
 
-void insertion_sort(int64_t* array, size_t array_length, Algorithm_Stats* statistics) {
-	for (size_t i = 1; i < array_length; i++) {
-		uint64_t key = array[i];
-		size_t j = i - 1;
+static Algorithm algorithms[] = {
+        {
+            .algorithm_callback = insertion_sort,
+            .name = "Insertion sort",
+        },
+        {
+            .algorithm_callback = quicksort,
+            .name = "Quicksort",
+        },
+        {
+            .algorithm_callback = quicksort_3way,
+            .name = "Quicksort 3-way",
+        }
+};
 
-		while (CMP((j + 1) > 0) && CMP(array[j] > key)) {
-			array[j + 1] = array[j];
-			j--;
-		}
-
-		array[j + 1] = key;
-		statistics->swap_count++;
-	}
-}
-
-const Algorithm_Runner_Descriptor runner_configuration = (Algorithm_Runner_Descriptor) {
-	.algorithms_count = 1,
-	.algorithms = &(Algorithm){
-		.algorithm_callback = insertion_sort,
-		.name = "Insertion sort",
-	},
-	.element_count_incrementer = linear_scale,
-	.single_test_stats_output_file = "results/single_test_results.csv",
-	.average_stats_output_file = "results/average_results.csv",
-	.runs_per_test = 16
+const Algorithm_Runner_Descriptor runner_configuration = {
+        .algorithms = algorithms,
+        .algorithms_count = 3,
+        .element_count_incrementer = linear_scale,
+        .single_test_stats_output_file = "../results/single_test_results.csv",
+        .average_stats_output_file = "../results/average_results.csv",
+        .runs_per_test = 16
 };
 
 int main() {

@@ -250,4 +250,9 @@ void algorithmrunner_destroy(const Algorithm_Runner* runner);
 	- `ALGORITHM_RUNNER_RESULT_MEMORY_ERROR` if the runner could not
 		allocate the memory necessary to run the tests.
 */
+
+void quicksort(int64_t* array, size_t array_length, Algorithm_Stats* statistics);
+void quicksort_3way(int64_t* array, size_t array_length, Algorithm_Stats* statistics);
+void insertion_sort(int64_t* array, size_t array_length, Algorithm_Stats* statistics);
+
 Algorithm_Runner_Result algorithmrunner_run(Algorithm_Runner* runner);

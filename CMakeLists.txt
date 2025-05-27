@@ -13,5 +13,8 @@ add_executable(quick_sort
 add_executable(quick_sort_3way
     src/runner/quicksort3way/main.c
 )
+add_executable(slowsort
+    src/runner/slowsort/main.c
+)
 
 

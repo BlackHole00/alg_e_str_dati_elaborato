@@ -4,6 +4,8 @@
 #include <string.h>
 #include <assert.h>
 
+#define DEBUG
+
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct AVL_Node {
 	int key;
@@ -46,11 +48,11 @@ AVL_Node* avlnode_successor(AVL_Node* node) {
 
 	AVL_Node* current_node = node->right;
 	if (current_node == NULL) {
-		return NULL;
+		return current_node;
 	}
 
 	while (current_node->left != NULL) {
-		current_node = node->left;
+		current_node = current_node->left;
 	}
 
 	return current_node;
@@ -87,6 +89,8 @@ typedef enum {
 	AVL_TREE_BALANCE_NEW_NODE,
 	AVL_TREE_BALANCE_DELETED_NODE,
 } AVL_Tree_Balance_Change;
+
+void avltree_show(AVL_Tree tree);
 
 void avltree_create(AVL_Tree* tree) {
 	tree->root = NULL;
@@ -138,6 +142,7 @@ void avltree_rotate_left(AVL_Tree* tree, AVL_Node* node) {
 
 	node->balance_factor -= 2;
 	right->balance_factor -= 1;
+	
 }
 
 void avltree_rotate_right(AVL_Tree* tree, AVL_Node* node) {
@@ -185,6 +190,8 @@ void avltree_rotate_left_right(AVL_Tree* tree, AVL_Node* node) {
 
 	avltree_rotate_left(tree, left);
 	avltree_rotate_right(tree, node);
+
+	left->balance_factor += 1;
 }
 
 void avltree_rotate_right_left(AVL_Tree* tree, AVL_Node* node) {
@@ -198,6 +205,8 @@ void avltree_rotate_right_left(AVL_Tree* tree, AVL_Node* node) {
 
 	avltree_rotate_right(tree, right);
 	avltree_rotate_left(tree, node);
+
+	right->balance_factor -= 1;
 }
 
 void avltree_rebalance(AVL_Tree* tree, AVL_Node* node) {
@@ -231,6 +240,10 @@ void avltree_rebalance(AVL_Tree* tree, AVL_Node* node) {
 		}
 	}
 
+	#ifdef DEBUG
+	avltree_show(*tree);
+	#endif
+
 	switch (rebalance_action) {
 	case AVL_TREE_REBALANCE_LEFT:
 		avltree_rotate_left(tree, node);
@@ -245,30 +258,46 @@ void avltree_rebalance(AVL_Tree* tree, AVL_Node* node) {
 		avltree_rotate_right_left(tree, node);
 		break;
 	}
+
+	#ifdef DEBUG
+	avltree_show(*tree);
+	#endif
 }
 
-void avltree_propagate_balance_change(AVL_Tree* tree, AVL_Node* node, AVL_Tree_Balance_Change change) {
-	int balance_delta;
-	switch (change) {
-	case AVL_TREE_BALANCE_NEW_NODE:
-		balance_delta = 1;
-	case AVL_TREE_BALANCE_DELETED_NODE:
-		balance_delta = -1;
-	}
+void avltree_propagate_balance_insertion(AVL_Tree* tree, AVL_Node* node) {
+	int balance_delta = 1;
 
 	AVL_Node* current_node = node;
 	while(current_node->parent != NULL) {
 		AVL_Node* prev_node = current_node;
 		current_node = current_node->parent;
 
+		int old_balance_factor = current_node->balance_factor;
+
 		if (current_node->left == prev_node) {
-			current_node->balance_factor += balance_delta;
-		} else {
+			#ifdef DEBUG
+			printf("Incrementing bf of %s to %d (from %d, coming from left)\n", current_node->value, current_node->balance_factor + balance_delta, current_node->balance_factor);
+			#endif
 			current_node->balance_factor -= balance_delta;
+		} else {
+			#ifdef DEBUG
+			printf("Incrementing bf of %s to %d (from %d, coming from right)\n", current_node->value, current_node->balance_factor - balance_delta, current_node->balance_factor);
+			#endif
+			current_node->balance_factor += balance_delta;
 		}
 
 		if (abs(current_node->balance_factor) > 1) {
 			avltree_rebalance(tree, current_node);
+			break;
+		}
+
+		if (
+			// ((current_node->left == prev_node && current_node->right != NULL) ||
+			// (current_node->right == prev_node && current_node->left != NULL)) &&
+			((current_node->left == prev_node && old_balance_factor > 0) ||
+			(current_node->right == prev_node && old_balance_factor < 0))
+			// prev_node == node
+		) {
 			break;
 		}
 	}
@@ -292,12 +321,17 @@ void avltree_insert(AVL_Tree* tree, int key, const char* value) {
 		}
 	}
 
+	#ifdef DEBUG
+	if (prev_node != NULL) {
+		printf("Inserting %s of %s\n", *insertion_point == prev_node->left ? "left" : "right", prev_node->value);
+	}
+	#endif
 	*insertion_point = avlnode_new(prev_node, key, value);
 	if (prev_node == NULL) {
 		tree->root = *insertion_point;
 	}
 
-	avltree_propagate_balance_change(tree, *insertion_point, AVL_TREE_BALANCE_NEW_NODE);
+	avltree_propagate_balance_insertion(tree, *insertion_point);
 }
 
 AVL_Node* avltree_find_node(AVL_Tree tree, int key) {
@@ -316,73 +350,131 @@ AVL_Node* avltree_find_node(AVL_Tree tree, int key) {
 	return NULL;
 }
 
+void avltree_propagate_balance_removal(AVL_Tree* tree, AVL_Node* node, bool was_left_node) {
+	if (node->parent == NULL) {
+		return;
+	}
+
+	int old_balance_factor = node->parent->balance_factor;
+
+	if (was_left_node) {
+		node->parent->balance_factor += 1;
+	} else {
+		node->parent->balance_factor -= 1;
+	}
+
+	if (abs(node->parent->balance_factor) > 1) {
+		avltree_rebalance(tree, node->parent);
+		return;
+	}
+
+	// if (old_balance_factor == 0) {
+	// 	return;
+	// }
+	if (was_left_node && old_balance_factor < 0) {
+		return;
+	}
+	if (!was_left_node && old_balance_factor > 0) {
+		return;
+	}
+
+	int balance_delta = -1;
+
+	AVL_Node* current_node = node->parent;
+	while(current_node->parent != NULL) {
+		AVL_Node* prev_node = current_node;
+		current_node = current_node->parent;
+
+		int old_balance_factor = current_node->balance_factor;
+
+		if (current_node->left == prev_node) {
+			#ifdef DEBUG
+			printf("Decrementing bf of %s to %d (from %d, coming from left)\n", current_node->value, current_node->balance_factor - balance_delta, current_node->balance_factor);
+			#endif
+			current_node->balance_factor -= balance_delta;
+		} else {
+			#ifdef DEBUG
+			printf("Decrementing bf of %s to %d (from %d, coming from right)\n", current_node->value, current_node->balance_factor + balance_delta, current_node->balance_factor);
+			#endif
+			current_node->balance_factor += balance_delta;
+		}
+
+		if (abs(current_node->balance_factor) > 1) {
+			avltree_rebalance(tree, current_node);
+			break;
+		}
+	}
+}
+
 void avltree_remove_leaf(AVL_Tree* tree, AVL_Node* leaf) {
 	assert(tree != NULL);
 	assert(leaf != NULL);
 
-	avltree_propagate_balance_change(tree, leaf, AVL_TREE_BALANCE_DELETED_NODE);
-
 	if (leaf->parent == NULL) {
 		tree->root = NULL;
 		return;
-	} else {
-		if (leaf->parent->left == leaf) {
-			leaf->parent->left = NULL;
-		} else {
-			leaf->parent->right = NULL;
-		}
 	}
 
+	bool was_left_node;
+	if (leaf->parent->left == leaf) {
+		was_left_node = true;
+		leaf->parent->left = NULL;
+	} else {
+		was_left_node = false;
+		leaf->parent->right = NULL;
+	}
+
+	avltree_propagate_balance_removal(tree, leaf, was_left_node);
 }
 
-void avltree_remove(AVL_Tree* tree, int key) {
-	AVL_Node* removal_node = avltree_find_node(*tree, key);
-	if (removal_node == NULL) {
-		return;
-	}
-
+void avltree_remove_helper(AVL_Tree* tree, AVL_Node* removal_node) {
 	if (removal_node->left == NULL && removal_node->right == NULL) {
 		avltree_remove_leaf(tree, removal_node);
 	} else if (removal_node->left == NULL) {
 		if (removal_node->parent == NULL) {
 			tree->root = removal_node->right;
+			removal_node->right->parent = NULL;
 			return;
 		} else {
+			bool was_left_node;
 			if (removal_node->parent->left == removal_node) {
 				removal_node->parent->left = removal_node->right;
+				removal_node->right->parent = removal_node->parent;
+
+				was_left_node = true;
 			} else {
 				removal_node->parent->right = removal_node->right;
+				removal_node->right->parent = removal_node->parent;
+
+				was_left_node = false;
 			}
-			avltree_propagate_balance_change(tree, removal_node, AVL_TREE_BALANCE_DELETED_NODE);
+			avltree_propagate_balance_removal(tree, removal_node, was_left_node);
 		}
 	} else if (removal_node->right == NULL) {
 		if (removal_node->parent == NULL) {
 			tree->root = removal_node->left;
+			removal_node->left->parent = NULL;
 			return;
 		} else {
+			bool was_left_node;
 			if (removal_node->parent->right == removal_node) {
 				removal_node->parent->right = removal_node->left;
+				removal_node->left->parent = removal_node->parent;
+
+				was_left_node = false;
 			} else {
 				removal_node->parent->left = removal_node->left;
+				removal_node->left->parent = removal_node->parent;
+
+				was_left_node = true;
 			}
-			avltree_propagate_balance_change(tree, removal_node, AVL_TREE_BALANCE_DELETED_NODE);
+			avltree_propagate_balance_removal(tree, removal_node, was_left_node);
 		}
 	} else {
 		AVL_Node* successor = avlnode_successor(removal_node);
 		assert(successor != NULL);
 
-		avltree_remove_leaf(tree, successor);
-
-		if (removal_node->parent == NULL) {
-			tree->root = successor;
-			successor->parent = NULL;
-		} else {
-			if (removal_node->parent->left == removal_node) {
-				removal_node->parent->left = successor;
-			} else {
-				removal_node->parent->right = successor;
-			}
-		}
+		avltree_remove_helper(tree, successor);
 
 		successor->left = removal_node->left;
 		if (successor->left != NULL) {
@@ -393,10 +485,32 @@ void avltree_remove(AVL_Tree* tree, int key) {
 		if (successor->right != NULL) {
 			successor->right->parent = successor;
 		}
+
+		successor->balance_factor = removal_node->balance_factor;
+
+		if (removal_node->parent == NULL) {
+			tree->root = successor;
+			successor->parent = NULL;
+		} else {
+			successor->parent = removal_node->parent;
+
+			if (removal_node->parent->left == removal_node) {
+				removal_node->parent->left = successor;
+			} else {
+				removal_node->parent->right = successor;
+			}
+		}
+	}
+}
+
+void avltree_remove(AVL_Tree* tree, int key) {
+	AVL_Node* removal_node = avltree_find_node(*tree, key);
+	if (removal_node == NULL) {
+		return;
 	}
 
+	avltree_remove_helper(tree, removal_node);
 	avlnode_free(removal_node);
-	return;
 }
 
 const char* avltree_find(AVL_Tree tree, int key) {
@@ -422,7 +536,11 @@ void avltree_show_helper(AVL_Node* node, int current_height, bool* is_frist_prin
 
 	int node_height = avlnode_height(node);
 
+	#ifdef DEBUG
+	printf("%d:%s:%d:%d", node->key, node->value, node_height, node->balance_factor);
+	#else
 	printf("%d:%s:%d", node->key, node->value, node_height);
+	#endif
 	avltree_show_helper(node->left, current_height + 1, is_frist_print);
 	avltree_show_helper(node->right, current_height + 1, is_frist_print);
 }
@@ -447,6 +565,14 @@ int main(void) {
 			int key;
 			char value[1024];
 			scanf("%d %s", &key, value);
+
+			avltree_insert(&tree, key, value);
+		} else if (strcmp(command, "ii") == 0) {
+			int key;
+			scanf("%d", &key);
+
+			char value[64];
+			sprintf(value, "%d", key);
 
 			avltree_insert(&tree, key, value);
 		} else if (strcmp(command, "remove") == 0 || strcmp(command, "r") == 0) {

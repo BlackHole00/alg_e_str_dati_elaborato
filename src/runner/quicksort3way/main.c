@@ -28,7 +28,7 @@ enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 #define RUNNER_MAX_ARRAY_ELEMENT 1000000
 #define RUNNER_TEST_COUNT 1000
 
-#define RUNNER_OUTPUT_FILE "results/quicksort3way.csv"
+#define RUNNER_OUTPUT_FILE "../results/quicksort3way.csv"
 
 
 ////////////////////////////////////////////////////////////////////////////////

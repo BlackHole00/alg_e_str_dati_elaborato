@@ -24,47 +24,57 @@
 #  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 #  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
+import os
+import glob
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, CheckButtons
 import numpy as np
 
 try:
-
     gruppi = []
-    gruppo_corrente = {"titolo": None, "tempi": [], "numero_elementi": []}
 
-#################################
-#   Leggo i dati dal file CSV   #
-#################################
+    ##############################
+    #   Leggo i file CSV        #
+    ##############################
     
-    with open('../../results/average_results.csv', 'r') as file:
-        for numero_riga, riga in enumerate(file, start=1):
-            riga = riga.strip()
-            if not riga:
-                if gruppo_corrente["titolo"]:
-                    gruppi.append(gruppo_corrente)
-                gruppo_corrente = {"titolo": None, "tempi": [], "numero_elementi": []}
-            elif gruppo_corrente["titolo"] is None:
-                gruppo_corrente["titolo"] = riga
-            else:
+    
+    folder_path = '../../results/'
+    csv_files = glob.glob(os.path.join(folder_path, '*.csv'))
+
+    for file_path in csv_files:
+        titolo = os.path.splitext(os.path.basename(file_path))[0]
+        tempi = []
+        numero_elementi = []
+
+        with open(file_path, 'r') as file:
+            for numero_riga, riga in enumerate(file, start=1):
+                riga = riga.strip()
+                if not riga:
+                    continue
                 try:
                     values = riga.split(',')
                     if len(values) >= 2:
                         numero, tempo = map(float, values[:2])
-                        gruppo_corrente["numero_elementi"].append(numero)
-                        gruppo_corrente["tempi"].append(tempo)
+                        numero_elementi.append(numero)
+                        tempi.append(tempo)
                 except ValueError:
-                    print(f"Errore alla riga {numero_riga}: valore non valido -> {riga.strip()}")
+                    print(f"Errore in {file_path} alla riga {numero_riga}: valore non valido -> {riga}")
 
-        
-        if gruppo_corrente["titolo"]:
-            gruppi.append(gruppo_corrente)
+        if numero_elementi and tempi:
+            gruppi.append({
+                "titolo": titolo,
+                "numero_elementi": numero_elementi,
+                "tempi": tempi
+            })
 
-    
-#########################
-#   Creo il grafico     #
-#########################
-    
+    if not gruppi:
+        print("Nessun dato valido trovato.")
+        exit()
+
+    #########################
+    #   Creo il grafico     #
+    #########################
+
     colors = plt.cm.tab20(np.linspace(0, 1, len(gruppi)))
 
     def plot_all_groups(gruppi, ax, visible_groups, colors):
@@ -119,35 +129,32 @@ try:
     fig, ax = plt.subplots(figsize=(10, 8))
     plt.subplots_adjust(left=0.3, bottom=0.2)
 
-    # Aggiungo le etichette
     labels = [gruppo["titolo"] for gruppo in gruppi]
     visible_groups = [True] * len(gruppi)
     
-    
-    is_log_scale = False  
+    is_log_scale = False
 
-    # Traccio i grafici
     plot_all_groups(gruppi, ax, visible_groups, colors)
 
     # Pulsante per alternare la scala
-    ax_button = plt.axes([0.8, 0.05, 0.1, 0.05])  # [x, y, larghezza, altezza]
+    ax_button = plt.axes([0.8, 0.05, 0.1, 0.05])    # [x, y, larghezza, altezza]
     button = Button(ax_button, 'Log Scale')
     button.on_clicked(toggle_scale)
 
     # Pulsanti di selezione visibilità grafici
-    ax_check = plt.axes([0.05, 0.5, 0.15, 0.25])  # [x, y, larghezza, altezza]
+    ax_check = plt.axes([0.05, 0.5, 0.2, 0.25])     # [x, y, larghezza, altezza]
     check = CheckButtons(ax_check, labels, visible_groups)
     update_checkbutton_colors(visible_groups)
 
     for spine in ax_check.spines.values():
         spine.set_visible(False)
 
-
     check.on_clicked(update_visibility)
 
     plt.show()
 
 except FileNotFoundError:
-    print("File inesistente")
+    print("File o cartella non trovati")
 except IOError:
-    print("Errore durante la lettura del file")
+    print("Errore durante la lettura dei file")
+

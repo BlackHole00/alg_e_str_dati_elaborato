@@ -28,7 +28,7 @@ enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 #define RUNNER_MAX_ARRAY_ELEMENT 1000000
 #define RUNNER_TEST_COUNT 100
 
-#define RUNNER_OUTPUT_FILE "results/slowsort.csv"
+#define RUNNER_OUTPUT_FILE "../results/slowsort.csv"
 
 
 ////////////////////////////////////////////////////////////////////////////////

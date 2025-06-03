@@ -27,7 +27,7 @@ enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 #define RUNNER_ENDING_ARRAY_LENGTH 100000
 #define RUNNER_MIN_ARRAY_ELEMENT 10
 #define RUNNER_MAX_ARRAY_ELEMENT 1000000
-#define RUNNER_TEST_COUNT 100
+#define RUNNER_TEST_COUNT 1000
 
 #define RUNNER_OUTPUT_FILE "./results/countingsort.csv"
 
@@ -75,18 +75,18 @@ void countingsort(int64_t* array, size_t array_length, int64_t max_array_element
 	countingsort_validate_memory(array_length, max_array_element, min_array_element);
 
 	uint64_t* counts_array = g_countingsort_memory.counts_array;
-	size_t counts_array_length = g_countingsort_memory.counts_array_length;
 	int64_t* results_array = g_countingsort_memory.results_array;
-	size_t results_array_length = g_countingsort_memory.results_array_length;
 
-	memset(counts_array, 0, counts_array_length * sizeof(int64_t));
+	size_t element_count = max_array_element - min_array_element + 1;
+
+	memset(counts_array, 0, element_count * sizeof(int64_t));
 
 	for (size_t i = 0; i < array_length; i += 1) {
 		int64_t key = array[i] - min_array_element;
 		counts_array[key] += 1;
 	}
 
-	for (size_t i = 1; i < counts_array_length; i += 1) {
+	for (size_t i = 1; i < element_count; i += 1) {
 		counts_array[i] += counts_array[i - 1];
 	}
 

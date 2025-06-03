@@ -18,7 +18,6 @@ Seguono i comandi da eseguire per buildare il progetto (si nota che il file eseg
 mkdir build
 cd build
 cmake ..
-cmake --build .
 ```
 
 Se si vuole utilizzare le funzionalita'di debug usare i seguenti comandi:
@@ -34,4 +33,13 @@ cd build
 cmake -G"Ninja Multi-Config" ..
 ```
 Allora sara'possibile utilizzare le configurazioni di debug in `VSCode` a seconda di quale sistema di build (`make` o `ninja`) e'stato utilizzato.
+
+Si nota che i progetti si aspettano che la current working directory non sia `build` bensi'la root del progetto. Una volta quindi buildati gli eseguibili e'necessario eseguirli come segue:
+```sh
+./build/quick_sort
+./build/quick_sort_3way
+# etc...
+```
+
+Una volta eseguiti i programmi porranno l'output nella cartella `results`.
 

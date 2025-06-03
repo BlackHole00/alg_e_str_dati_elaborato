@@ -156,7 +156,7 @@ void run_benchmark_iteration(size_t iteration) {
 		size_t min_element_index;
 		do {
 			min_element_index = rand() % array_length;
-		} while(min_element_index == max_element_index);
+		} while(array_length != 1 && min_element_index == max_element_index);
 		g_runner.array_buffer[min_element_index] = RUNNER_MIN_ARRAY_ELEMENT;
 
 		struct timespec start;

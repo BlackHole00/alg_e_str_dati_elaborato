@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include <assert.h>
 #include <time.h>
@@ -15,8 +16,8 @@
 // CONFIG
 ////////////////////////////////////////////////////////////////////////////////
 
-#define RUNNER_ALGORITHM_NAME "Slow Sort"
-#define RUNNER_ALGORITHM_FUNCTION slowsort
+#define RUNNER_ALGORITHM_NAME "Counting Sort"
+#define RUNNER_ALGORITHM_FUNCTION countingsort
 
 enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 #define RUNNER_MODE RUNNERMODE_BENCHMARK
@@ -28,36 +29,77 @@ enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 #define RUNNER_MAX_ARRAY_ELEMENT 1000000
 #define RUNNER_TEST_COUNT 100
 
-#define RUNNER_OUTPUT_FILE "./results/slowsort.csv"
+#define RUNNER_OUTPUT_FILE "./results/countingsort.csv"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // SORTING FUNCTION
 ////////////////////////////////////////////////////////////////////////////////
 
-void slowsort_helper(int64_t* array, size_t low, size_t high) {
-	if (low >= high) {
-		return;
+struct {
+	uint64_t* counts_array;
+	size_t counts_array_length;
+
+	int64_t* results_array;
+	size_t results_array_length;
+} g_countingsort_memory = { 0 };
+
+void countingsort_validate_memory(size_t array_length, int64_t max_array_element, int64_t min_array_element) {
+	int64_t elements_count = max_array_element - min_array_element + 1;
+
+	if (elements_count > g_countingsort_memory.counts_array_length) {
+		g_countingsort_memory.counts_array_length = elements_count;
+		g_countingsort_memory.counts_array = realloc(
+			g_countingsort_memory.counts_array,
+			g_countingsort_memory.counts_array_length * sizeof(uint64_t)
+		);
+		assert(g_countingsort_memory.counts_array != NULL);
 	}
 
-	size_t middle = (low + high) / 2;
+	if (array_length > g_countingsort_memory.results_array_length) {
+		if (g_countingsort_memory.results_array_length * 2 < array_length) {
+			g_countingsort_memory.results_array_length = array_length;
+		} else {
+			g_countingsort_memory.results_array_length *= 2;
+		}
 
-	slowsort_helper(array, low, middle);
-	slowsort_helper(array, middle + 1, high);
+		g_countingsort_memory.results_array = realloc(
+			g_countingsort_memory.results_array,
+			g_countingsort_memory.results_array_length * sizeof(int64_t)
+		);
+		assert(g_countingsort_memory.results_array != NULL);
+	}
+}
 
-	if (array[high] < array[middle]) {
-		int64_t temp = array[middle];
-		array[middle] = array[high];
-		array[high] = temp;
+void countingsort(int64_t* array, size_t array_length, int64_t max_array_element, int64_t min_array_element) {
+	countingsort_validate_memory(array_length, max_array_element, min_array_element);
+
+	uint64_t* counts_array = g_countingsort_memory.counts_array;
+	size_t counts_array_length = g_countingsort_memory.counts_array_length;
+	int64_t* results_array = g_countingsort_memory.results_array;
+	size_t results_array_length = g_countingsort_memory.results_array_length;
+
+	memset(counts_array, 0, counts_array_length * sizeof(int64_t));
+
+	for (size_t i = 0; i < array_length; i += 1) {
+		int64_t key = array[i] - min_array_element;
+		counts_array[key] += 1;
 	}
 
-	slowsort_helper(array, low, high - 1);
-}
+	for (size_t i = 1; i < counts_array_length; i += 1) {
+		counts_array[i] += counts_array[i - 1];
+	}
 
-void slowsort(int64_t* array, size_t array_length, int64_t max_element, int64_t min_element) {
-	slowsort_helper(array, 0, array_length - 1);
-}
+	for (size_t ii = array_length; ii > 0; ii -= 1) {
+		size_t i = ii - 1;
 
+		int64_t key = array[i] - min_array_element;
+		counts_array[key] -= 1;
+		results_array[counts_array[key]] = array[i];
+	}
+
+	memcpy(array, results_array, array_length * sizeof(int64_t));
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // BENCHMARK MODE
@@ -303,5 +345,6 @@ int main() {
 		run_elearning_mode(); break;
 	}
 }
+
 
 

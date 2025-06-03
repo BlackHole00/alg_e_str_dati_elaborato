@@ -24,3 +24,8 @@ add_executable(slowsort
 )
 target_link_libraries(slowsort m)
 
+add_executable(counting_sort
+    src/runner/countingsort/main.c
+)
+target_link_libraries(counting_sort m)
+

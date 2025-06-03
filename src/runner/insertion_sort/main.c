@@ -35,7 +35,7 @@ enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 // SORTING FUNCTION
 ////////////////////////////////////////////////////////////////////////////////
 
-void insertion_sort(int64_t* array, size_t array_length) {
+void insertion_sort(int64_t* array, size_t array_length, int64_t max_element, int64_t min_element) {
 	for (size_t i = 1; i < array_length; i++) {
 		int64_t key = array[i];
 		ssize_t j = (ssize_t)i - 1;
@@ -157,7 +157,12 @@ void run_benchmark_iteration(size_t iteration) {
 		struct timespec end;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		RUNNER_ALGORITHM_FUNCTION(g_runner.array_buffer, array_length);
+		RUNNER_ALGORITHM_FUNCTION(
+			g_runner.array_buffer,
+			array_length,
+			RUNNER_MAX_ARRAY_ELEMENT,
+			RUNNER_MIN_ARRAY_ELEMENT
+		);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		assert(is_array_sorted(g_runner.array_buffer, array_length));
@@ -268,7 +273,7 @@ void run_elearning_mode(void) {
 	size_t numbers_count;
 	parse_input(input_line, &numbers, &numbers_count);
 
-	RUNNER_ALGORITHM_FUNCTION(numbers, numbers_count);
+	RUNNER_ALGORITHM_FUNCTION(numbers, numbers_count, RUNNER_MIN_ARRAY_ELEMENT, RUNNER_MAX_ARRAY_ELEMENT);
 	assert(is_array_sorted(numbers, numbers_count));
 
 	for (size_t i = 0; i < numbers_count; i++) {

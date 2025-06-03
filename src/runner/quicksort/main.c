@@ -65,7 +65,7 @@ void quicksort_rec(int64_t arr[], int64_t low, int64_t high) {
 	}
 }
 
-void quicksort(int64_t* array, size_t array_length) {
+void quicksort(int64_t* array, size_t array_length, int64_t max_element, int64_t min_element) {
 	if (array_length > 1) {
 		quicksort_rec(array, 0, (int64_t)array_length - 1);
 	}
@@ -176,7 +176,12 @@ void run_benchmark_iteration(size_t iteration) {
 		struct timespec end;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		RUNNER_ALGORITHM_FUNCTION(g_runner.array_buffer, array_length);
+		RUNNER_ALGORITHM_FUNCTION(
+			g_runner.array_buffer,
+			array_length,
+			RUNNER_MAX_ARRAY_ELEMENT,
+			RUNNER_MIN_ARRAY_ELEMENT
+		);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		assert(is_array_sorted(g_runner.array_buffer, array_length));
@@ -287,7 +292,7 @@ void run_elearning_mode(void) {
 	size_t numbers_count;
 	parse_input(input_line, &numbers, &numbers_count);
 
-	RUNNER_ALGORITHM_FUNCTION(numbers, numbers_count);
+	RUNNER_ALGORITHM_FUNCTION(numbers, numbers_count, RUNNER_MIN_ARRAY_ELEMENT, RUNNER_MAX_ARRAY_ELEMENT);
 	assert(is_array_sorted(numbers, numbers_count));
 
 	for (size_t i = 0; i < numbers_count; i++) {

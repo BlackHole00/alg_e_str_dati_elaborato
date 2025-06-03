@@ -28,7 +28,7 @@ enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 #define RUNNER_MAX_ARRAY_ELEMENT 1000000
 #define RUNNER_TEST_COUNT 1000
 
-#define RUNNER_OUTPUT_FILE "../results/quicksort.csv"
+#define RUNNER_OUTPUT_FILE "./results/quicksort.csv"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -162,6 +162,15 @@ void run_benchmark_iteration(size_t iteration) {
 		for (size_t i = 0; i < array_length; i++) {
 			g_runner.array_buffer[i] = calculate_random_array_element();
 		}
+
+		size_t max_element_index = rand() % array_length;
+		g_runner.array_buffer[max_element_index] = RUNNER_MAX_ARRAY_ELEMENT;
+
+		size_t min_element_index;
+		do {
+			min_element_index = rand() % array_length;
+		} while(min_element_index == max_element_index);
+		g_runner.array_buffer[min_element_index] = RUNNER_MIN_ARRAY_ELEMENT;
 
 		struct timespec start;
 		struct timespec end;

@@ -1,6 +1,6 @@
 #   INFO:
 #   Necessario installare la libreria matplotlib
-#   Recupera i dati dal file averege_results.csv presente in /results/
+#   Recupera i dati dai file .csv presenti in /results/
 #
 #             *     ,MMM8&&&.            *
 #                  MMMM88&&&&&    .
@@ -38,7 +38,7 @@ try:
     ##############################
     
     
-    folder_path = '../../results/'
+    folder_path = 'results/'
     csv_files = glob.glob(os.path.join(folder_path, '*.csv'))
 
     for file_path in csv_files:
@@ -91,8 +91,8 @@ try:
                 )
 
         ax.set_title("Grafico")
-        ax.set_xlabel("Numero di Elementi")
-        ax.set_ylabel("Tempo")
+        ax.set_xlabel("Array Length")
+        ax.set_ylabel("Time (µs)")
         ax.grid(True)
 
         if is_log_scale:
@@ -142,7 +142,7 @@ try:
     button.on_clicked(toggle_scale)
 
     # Pulsanti di selezione visibilità grafici
-    ax_check = plt.axes([0.05, 0.5, 0.2, 0.25])     # [x, y, larghezza, altezza]
+    ax_check = plt.axes([0.05, 0.5, 0.17, 0.25])     # [x, y, larghezza, altezza]
     check = CheckButtons(ax_check, labels, visible_groups)
     update_checkbutton_colors(visible_groups)
 

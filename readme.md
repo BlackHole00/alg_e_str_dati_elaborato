@@ -43,3 +43,15 @@ Si nota che i progetti si aspettano che la current working directory non sia `bu
 
 Una volta eseguiti i programmi porranno l'output nella cartella `results`.
 
+## Visualizzazione dei grafici
+
+Per visualizzare i grafici dei risultati ottenuti, è possibile eseguire lo script Python `genera_grafico.py` presente nella cartella `src/visualizer`.
+
+Assicurarsi di avere Python installato con la seguente libreria `matplotlib`.
+
+Lo script può essere eseguito con il seguente comando:
+
+```sh
+python3 src/visualizer/genera_grafico.py
+```
+

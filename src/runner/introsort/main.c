@@ -390,7 +390,7 @@ void run_elearning_mode(void) {
 	size_t numbers_count;
 	parse_input(input_line, &numbers, &numbers_count);
 
-	RUNNER_ALGORITHM_FUNCTION(numbers, numbers_count, RUNNER_MIN_ARRAY_ELEMENT, RUNNER_MAX_ARRAY_ELEMENT);
+	RUNNER_ALGORITHM_FUNCTION(numbers, numbers_count);
 	assert(is_array_sorted(numbers, numbers_count));
 
 	for (size_t i = 0; i < numbers_count; i++) {

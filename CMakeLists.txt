@@ -29,3 +29,8 @@ add_executable(counting_sort
 )
 target_link_libraries(counting_sort m)
 
+add_executable(intro_sort
+    src/runner/introsort/main.c
+)
+target_link_libraries(intro_sort m)
+

@@ -4,34 +4,39 @@
 #include <string.h>
 #include <assert.h>
 
-#define DEBUG
+
+////////////////////////////////////////////////////////////////////////////////
+int max_int(int a, int b) {
+	if (a > b) {
+		return a;
+	} else {
+		return b;
+	}
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct AVL_Node {
 	int key;
 	const char* value;
 
-	struct AVL_Node* parent;
 	struct AVL_Node* left;
 	struct AVL_Node* right;
 
-	// Dato da height(right) - height(left)
-	// Valori OK: -1, 0, 1. Altri valori richiedono bilanciamento
-	int balance_factor;
+	int height;
 } AVL_Node;
 
-AVL_Node* avlnode_new(AVL_Node* parent, int key, const char* value) {
+AVL_Node* avlnode_new(int key, const char* value) {
 	AVL_Node* node = malloc(sizeof(AVL_Node));
 	assert(node != NULL);
 
 	node->key = key;
 	node->value = strdup(value);
 
-	node->parent = parent;
 	node->left = NULL;
 	node->right = NULL;
 
-	node->balance_factor = 0;
+	node->height = 1;
 
 	return node;
 }
@@ -41,6 +46,22 @@ void avlnode_free(AVL_Node* node) {
 
 	free((void*)node->value);
 	free(node);
+}
+
+int avlnode_height(AVL_Node* node) {
+	if (node == NULL) {
+		return 0;
+	}
+
+	return node->height;
+}
+
+int avlnode_balance_factor(AVL_Node* node) {
+	if (node == NULL) {
+		return 0;
+	}
+
+	return avlnode_height(node->left) - avlnode_height(node->right);
 }
 
 AVL_Node* avlnode_successor(AVL_Node* node) {
@@ -58,39 +79,151 @@ AVL_Node* avlnode_successor(AVL_Node* node) {
 	return current_node;
 }
 
-int avlnode_height(AVL_Node* node) {
-	if (node == NULL) {
-		return 0;
-	}
+AVL_Node* avlnode_rotate_left(AVL_Node* node) {
+	assert(node != NULL);
+	assert(node->right != NULL);
 
-	int left_height = avlnode_height(node->left);
-	int right_height = avlnode_height(node->right);
+	AVL_Node* right = node->right;
+	AVL_Node* right_left = right->left;
 
-	if (left_height > right_height) {
-		return left_height + 1;
-	} else {
-		return right_height + 1;
-	}
+	right->left = node;
+	node->right = right_left;
+
+	node->height = max_int(avlnode_height(node->left), avlnode_height(node->right)) + 1;
+	right->height = max_int(avlnode_height(right->left), avlnode_height(right->right)) + 1;
+
+	return right;
 }
+
+AVL_Node* avlnode_rotate_right(AVL_Node* node) {
+	assert(node != NULL);
+	assert(node->left != NULL);
+
+	AVL_Node* left = node->left;
+	AVL_Node* left_right = left->right;
+
+	left->right = node;
+	node->left = left_right;
+
+	node->height = max_int(avlnode_height(node->left), avlnode_height(node->right)) + 1;
+	left->height = max_int(avlnode_height(left->left), avlnode_height(left->right)) + 1;
+	
+	return left;
+}
+
+AVL_Node* avlnode_rotate_leftright(AVL_Node* node) {
+	assert(node != NULL);
+
+	node->left = avlnode_rotate_left(node->left);
+	return avlnode_rotate_right(node);
+}
+
+AVL_Node* avlnode_rotate_rightleft(AVL_Node* node) {
+	assert(node != NULL);
+
+	node->right = avlnode_rotate_right(node->right);
+	return avlnode_rotate_left(node);
+}
+
+AVL_Node* avlnode_rebalance(AVL_Node* node) {
+	int balance_factor = avlnode_balance_factor(node);
+	if (balance_factor > 1) {
+		if (avlnode_balance_factor(node->left) >= 0) {
+			return avlnode_rotate_right(node);
+		} else {
+			return avlnode_rotate_leftright(node);
+		}
+	} else if (balance_factor < -1) {
+		if (avlnode_balance_factor(node->right) <= 0) {
+			return avlnode_rotate_left(node);
+		} else {
+			return avlnode_rotate_rightleft(node);
+		}
+	}
+
+	return node;
+}
+
+AVL_Node* avlnode_insert_in_subtree(AVL_Node* node, int key, const char* value) {
+	if (node == NULL) {
+		return avlnode_new(key, value);
+	}
+
+	if (key < node->key) {
+		node->left = avlnode_insert_in_subtree(node->left, key, value);
+	} else {
+		node->right = avlnode_insert_in_subtree(node->right, key, value);
+	}
+
+	node->height = max_int(avlnode_height(node->left), avlnode_height(node->right)) + 1;
+	return avlnode_rebalance(node);
+}
+
+AVL_Node* avlnode_find_in_subtree(AVL_Node* node, int key) {
+	while (node != NULL) {
+		if (key == node->key) {
+			return node;
+		} else if (key > node->key) {
+			node = node->right;
+		} else {
+			node = node->left;
+		}
+	}
+
+	return NULL;
+}
+
+AVL_Node* avlnode_remove_in_subtree(AVL_Node* node, int key) {
+	if (node == NULL) {
+		return NULL;
+	}
+	if (key < node->key) {
+		node->left = avlnode_remove_in_subtree(node->left, key);
+	} else if (key > node->key) {
+		node->right = avlnode_remove_in_subtree(node->right, key);
+	} else {
+		if (node->left == NULL && node->right == NULL) {
+			avlnode_free(node);
+			node = NULL;
+		} else if (node->left == NULL || node->right == NULL) {
+			AVL_Node* children;
+			if (node->left != NULL) {
+				children = node->left;
+			} else {
+				children = node->right;
+			}
+
+			AVL_Node temp = *node;
+			*node = *children;
+			*children = temp;
+
+			avlnode_free(children);
+		} else {
+			AVL_Node* successor = avlnode_successor(node);
+
+			const char* temp = node->value;
+			node->value = successor->value;
+			successor->value = temp;
+
+			node->key = successor->key;
+			node->right = avlnode_remove_in_subtree(node->right, successor->key);
+		}
+	}
+
+	if (node == NULL) {
+		return NULL;
+	}
+
+	node->height = max_int(avlnode_height(node->left), avlnode_height(node->right)) + 1;
+
+	return avlnode_rebalance(node);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct {
 	AVL_Node* root;
 } AVL_Tree;
-
-typedef enum {
-	AVL_TREE_REBALANCE_RIGHT,
-	AVL_TREE_REBALANCE_LEFT,
-	AVL_TREE_REBALANCE_LEFT_RIGHT,
-	AVL_TREE_REBALANCE_RIGHT_LEFT,
-} AVL_Tree_Rebalance_Action;
-
-typedef enum {
-	AVL_TREE_BALANCE_NEW_NODE,
-	AVL_TREE_BALANCE_DELETED_NODE,
-} AVL_Tree_Balance_Change;
-
-void avltree_show(AVL_Tree tree);
 
 void avltree_create(AVL_Tree* tree) {
 	tree->root = NULL;
@@ -107,414 +240,21 @@ void avltree_destroy_helper(AVL_Node* node) {
 	avlnode_free(node);
 }
 
-void avltree_destroy(AVL_Tree tree) {
-	avltree_destroy_helper(tree.root);
-}
-
-void avltree_rotate_left(AVL_Tree* tree, AVL_Node* node) {
-	assert(tree != NULL);
-	assert(node != NULL);
-
-	AVL_Node* right = node->right;
-	if (right == NULL) {
-		return;
-	}
-
-	node->right = right->left;
-	if (right->left != NULL) {
-		right->left->parent = node;
-	}
-
-	if (node->parent == NULL) {
-		tree->root = right;
-		right->parent = NULL;
-	} else {
-		right->parent = node->parent;
-		if (node->parent->left == node) {
-			node->parent->left = right;
-		} else {
-			node->parent->right = right;
-		}
-	}
-
-	right->left = node;
-	node->parent = right;
-
-	node->balance_factor -= 2;
-	right->balance_factor -= 1;
-	
-}
-
-void avltree_rotate_right(AVL_Tree* tree, AVL_Node* node) {
-	assert(tree != NULL);
-	assert(node != NULL);
-
-	AVL_Node* left = node->left;
-	if (left == NULL) {
-		return;
-	}
-
-	node->left = left->right;
-	if (left->right != NULL) {
-		left->right->parent = node;
-	}
-
-	if (node->parent == NULL) {
-		tree->root = left;
-		left->parent = NULL;
-	} else {
-		left->parent = node->parent;
-		if (node->parent->left == node) {
-			node->parent->left = left;
-		} else {
-			node->parent->right = left;
-		}
-	}
-
-	left->right = node;
-	node->parent = left;
-
-	node->balance_factor += 2;
-	left->balance_factor += 1;
-
-}
-
-void avltree_rotate_left_right(AVL_Tree* tree, AVL_Node* node) {
-	assert(tree != NULL);
-	assert(node != NULL);
-
-	AVL_Node* left = node->left;
-	if (left == NULL) {
-		return;
-	}
-
-	avltree_rotate_left(tree, left);
-	avltree_rotate_right(tree, node);
-
-	left->balance_factor += 1;
-}
-
-void avltree_rotate_right_left(AVL_Tree* tree, AVL_Node* node) {
-	assert(tree != NULL);
-	assert(node != NULL);
-
-	AVL_Node* right = node->right;
-	if (right == NULL) {
-		return;
-	}
-
-	avltree_rotate_right(tree, right);
-	avltree_rotate_left(tree, node);
-
-	right->balance_factor -= 1;
-}
-
-void avltree_rebalance(AVL_Tree* tree, AVL_Node* node) {
-	assert(tree != NULL);
-	assert(node != NULL);
-
-	if (abs(node->balance_factor) < 1) {
-		// No rebalance needed
-		return;
-	}
-
-	AVL_Tree_Rebalance_Action rebalance_action;
-
-	if (node->balance_factor < 0) {
-		assert(node->balance_factor == -2);
-		assert(node->left != NULL);
-
-		if (node->left->balance_factor < 0) {
-			rebalance_action = AVL_TREE_REBALANCE_RIGHT;
-		} else {
-			rebalance_action = AVL_TREE_REBALANCE_LEFT_RIGHT;
-		}
-	} else {
-		assert(node->balance_factor == 2);
-		assert(node->right != NULL);
-
-		if (node->right->balance_factor > 0) {
-			rebalance_action = AVL_TREE_REBALANCE_LEFT;
-		} else {
-			rebalance_action = AVL_TREE_REBALANCE_RIGHT_LEFT;
-		}
-	}
-
-	#ifdef DEBUG
-	avltree_show(*tree);
-	#endif
-
-	switch (rebalance_action) {
-	case AVL_TREE_REBALANCE_LEFT:
-		avltree_rotate_left(tree, node);
-		break;
-	case AVL_TREE_REBALANCE_RIGHT:
-		avltree_rotate_right(tree, node);
-		break;
-	case AVL_TREE_REBALANCE_LEFT_RIGHT:
-		avltree_rotate_left_right(tree, node);
-		break;
-	case AVL_TREE_REBALANCE_RIGHT_LEFT:
-		avltree_rotate_right_left(tree, node);
-		break;
-	}
-
-	#ifdef DEBUG
-	avltree_show(*tree);
-	#endif
-}
-
-void avltree_propagate_balance_insertion(AVL_Tree* tree, AVL_Node* node) {
-	int balance_delta = 1;
-
-	AVL_Node* current_node = node;
-	while(current_node->parent != NULL) {
-		AVL_Node* prev_node = current_node;
-		current_node = current_node->parent;
-
-		int old_balance_factor = current_node->balance_factor;
-
-		if (current_node->left == prev_node) {
-			#ifdef DEBUG
-			printf("Incrementing bf of %s to %d (from %d, coming from left)\n", current_node->value, current_node->balance_factor + balance_delta, current_node->balance_factor);
-			#endif
-			current_node->balance_factor -= balance_delta;
-		} else {
-			#ifdef DEBUG
-			printf("Incrementing bf of %s to %d (from %d, coming from right)\n", current_node->value, current_node->balance_factor - balance_delta, current_node->balance_factor);
-			#endif
-			current_node->balance_factor += balance_delta;
-		}
-
-		if (abs(current_node->balance_factor) > 1) {
-			avltree_rebalance(tree, current_node);
-			break;
-		}
-
-		if (
-			// ((current_node->left == prev_node && current_node->right != NULL) ||
-			// (current_node->right == prev_node && current_node->left != NULL)) &&
-			((current_node->left == prev_node && old_balance_factor > 0) ||
-			(current_node->right == prev_node && old_balance_factor < 0))
-			// prev_node == node
-		) {
-			break;
-		}
-	}
-	
+void avltree_destroy(AVL_Tree* tree) {
+	avltree_destroy_helper(tree->root);
+	tree->root = NULL;
 }
 
 void avltree_insert(AVL_Tree* tree, int key, const char* value) {
-	assert(tree != NULL);
-
-	AVL_Node* prev_node = NULL;
-	AVL_Node** insertion_point = &tree->root;
-
-	// Walk down the tree to find an insertion location
-	while (*insertion_point != NULL) {
-		prev_node = *insertion_point;
-
-		if ((*insertion_point)->key > key) {
-			insertion_point = &((*insertion_point)->left);
-		} else {
-			insertion_point = &((*insertion_point)->right);
-		}
-	}
-
-	#ifdef DEBUG
-	if (prev_node != NULL) {
-		printf("Inserting %s of %s\n", *insertion_point == prev_node->left ? "left" : "right", prev_node->value);
-	}
-	#endif
-	*insertion_point = avlnode_new(prev_node, key, value);
-	if (prev_node == NULL) {
-		tree->root = *insertion_point;
-	}
-
-	avltree_propagate_balance_insertion(tree, *insertion_point);
-}
-
-AVL_Node* avltree_find_node(AVL_Tree tree, int key) {
-	AVL_Node* current_node = tree.root;
-	
-	while (current_node != NULL) {
-		if (key == current_node->key) {
-			return current_node;
-		} else if (key > current_node->key) {
-			current_node = current_node->right;
-		} else {
-			current_node = current_node->left;
-		}
-	}
-
-	return NULL;
-}
-
-void avltree_propagate_balance_removal(AVL_Tree* tree, AVL_Node* node, bool was_left_node) {
-	if (node->parent == NULL) {
-		return;
-	}
-
-	int old_balance_factor = node->parent->balance_factor;
-
-	if (was_left_node) {
-		node->parent->balance_factor += 1;
-	} else {
-		node->parent->balance_factor -= 1;
-	}
-
-	if (abs(node->parent->balance_factor) > 1) {
-		avltree_rebalance(tree, node->parent);
-		return;
-	}
-
-	// if (old_balance_factor == 0) {
-	// 	return;
-	// }
-	if (was_left_node && old_balance_factor < 0) {
-		return;
-	}
-	if (!was_left_node && old_balance_factor > 0) {
-		return;
-	}
-
-	int balance_delta = -1;
-
-	AVL_Node* current_node = node->parent;
-	while(current_node->parent != NULL) {
-		AVL_Node* prev_node = current_node;
-		current_node = current_node->parent;
-
-		int old_balance_factor = current_node->balance_factor;
-
-		if (current_node->left == prev_node) {
-			#ifdef DEBUG
-			printf("Decrementing bf of %s to %d (from %d, coming from left)\n", current_node->value, current_node->balance_factor - balance_delta, current_node->balance_factor);
-			#endif
-			current_node->balance_factor -= balance_delta;
-		} else {
-			#ifdef DEBUG
-			printf("Decrementing bf of %s to %d (from %d, coming from right)\n", current_node->value, current_node->balance_factor + balance_delta, current_node->balance_factor);
-			#endif
-			current_node->balance_factor += balance_delta;
-		}
-
-		if (abs(current_node->balance_factor) > 1) {
-			avltree_rebalance(tree, current_node);
-			break;
-		}
-	}
-}
-
-void avltree_remove_leaf(AVL_Tree* tree, AVL_Node* leaf) {
-	assert(tree != NULL);
-	assert(leaf != NULL);
-
-	if (leaf->parent == NULL) {
-		tree->root = NULL;
-		return;
-	}
-
-	bool was_left_node;
-	if (leaf->parent->left == leaf) {
-		was_left_node = true;
-		leaf->parent->left = NULL;
-	} else {
-		was_left_node = false;
-		leaf->parent->right = NULL;
-	}
-
-	avltree_propagate_balance_removal(tree, leaf, was_left_node);
-}
-
-void avltree_remove_helper(AVL_Tree* tree, AVL_Node* removal_node) {
-	if (removal_node->left == NULL && removal_node->right == NULL) {
-		avltree_remove_leaf(tree, removal_node);
-	} else if (removal_node->left == NULL) {
-		if (removal_node->parent == NULL) {
-			tree->root = removal_node->right;
-			removal_node->right->parent = NULL;
-			return;
-		} else {
-			bool was_left_node;
-			if (removal_node->parent->left == removal_node) {
-				removal_node->parent->left = removal_node->right;
-				removal_node->right->parent = removal_node->parent;
-
-				was_left_node = true;
-			} else {
-				removal_node->parent->right = removal_node->right;
-				removal_node->right->parent = removal_node->parent;
-
-				was_left_node = false;
-			}
-			avltree_propagate_balance_removal(tree, removal_node, was_left_node);
-		}
-	} else if (removal_node->right == NULL) {
-		if (removal_node->parent == NULL) {
-			tree->root = removal_node->left;
-			removal_node->left->parent = NULL;
-			return;
-		} else {
-			bool was_left_node;
-			if (removal_node->parent->right == removal_node) {
-				removal_node->parent->right = removal_node->left;
-				removal_node->left->parent = removal_node->parent;
-
-				was_left_node = false;
-			} else {
-				removal_node->parent->left = removal_node->left;
-				removal_node->left->parent = removal_node->parent;
-
-				was_left_node = true;
-			}
-			avltree_propagate_balance_removal(tree, removal_node, was_left_node);
-		}
-	} else {
-		AVL_Node* successor = avlnode_successor(removal_node);
-		assert(successor != NULL);
-
-		avltree_remove_helper(tree, successor);
-
-		successor->left = removal_node->left;
-		if (successor->left != NULL) {
-			successor->left->parent = successor;
-		}
-
-		successor->right = removal_node->right;
-		if (successor->right != NULL) {
-			successor->right->parent = successor;
-		}
-
-		successor->balance_factor = removal_node->balance_factor;
-
-		if (removal_node->parent == NULL) {
-			tree->root = successor;
-			successor->parent = NULL;
-		} else {
-			successor->parent = removal_node->parent;
-
-			if (removal_node->parent->left == removal_node) {
-				removal_node->parent->left = successor;
-			} else {
-				removal_node->parent->right = successor;
-			}
-		}
-	}
+	tree->root = avlnode_insert_in_subtree(tree->root, key, value);
 }
 
 void avltree_remove(AVL_Tree* tree, int key) {
-	AVL_Node* removal_node = avltree_find_node(*tree, key);
-	if (removal_node == NULL) {
-		return;
-	}
-
-	avltree_remove_helper(tree, removal_node);
-	avlnode_free(removal_node);
+	tree->root = avlnode_remove_in_subtree(tree->root, key);
 }
 
 const char* avltree_find(AVL_Tree tree, int key) {
-	AVL_Node* search_result = avltree_find_node(tree, key);
+	AVL_Node* search_result = avlnode_find_in_subtree(tree.root, key);
 	if (search_result == NULL) {
 		return NULL;
 	} else {
@@ -522,11 +262,11 @@ const char* avltree_find(AVL_Tree tree, int key) {
 	}
 }
 
-void avltree_show_helper(AVL_Node* node, int current_height, bool* is_frist_print) {
-	if (!*is_frist_print) {
+void avltree_show_helper(AVL_Node* node, int current_height, bool* is_first_print) {
+	if (!*is_first_print) {
 		printf(" ");
 	} else {
-		*is_frist_print = false;
+		*is_first_print = false;
 	}
 
 	if (node == NULL) {
@@ -534,15 +274,9 @@ void avltree_show_helper(AVL_Node* node, int current_height, bool* is_frist_prin
 		return;
 	}
 
-	int node_height = avlnode_height(node);
-
-	#ifdef DEBUG
-	printf("%d:%s:%d:%d", node->key, node->value, node_height, node->balance_factor);
-	#else
-	printf("%d:%s:%d", node->key, node->value, node_height);
-	#endif
-	avltree_show_helper(node->left, current_height + 1, is_frist_print);
-	avltree_show_helper(node->right, current_height + 1, is_frist_print);
+	printf("%d:%s:%d", node->key, node->value, node->height);
+	avltree_show_helper(node->left, current_height + 1, is_first_print);
+	avltree_show_helper(node->right, current_height + 1, is_first_print);
 }
 
 void avltree_show(AVL_Tree tree) {
@@ -551,7 +285,7 @@ void avltree_show(AVL_Tree tree) {
 	printf("\n");
 }
 
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 int main(void) {
 	AVL_Tree tree;
 	avltree_create(&tree);
@@ -593,6 +327,6 @@ int main(void) {
 		}
 	}
 	
-	avltree_destroy(tree);
+	avltree_destroy(&tree);
 }
 

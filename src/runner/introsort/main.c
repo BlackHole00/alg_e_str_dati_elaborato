@@ -165,7 +165,7 @@ void introsort_helper(int64_t array[], size_t low, size_t high, size_t max_depth
 	}
 }
 
-void introsort(int64_t* array, size_t array_length, int64_t max_element, int64_t min_element) {
+void introsort(int64_t* array, size_t array_length) {
 	if (array_length <= 0) {
 		return;
 	}
@@ -279,12 +279,7 @@ void run_benchmark_iteration(size_t iteration) {
 		struct timespec end;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		RUNNER_ALGORITHM_FUNCTION(
-			g_runner.array_buffer,
-			array_length,
-			RUNNER_MAX_ARRAY_ELEMENT,
-			RUNNER_MIN_ARRAY_ELEMENT
-		);
+		RUNNER_ALGORITHM_FUNCTION(g_runner.array_buffer, array_length);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		assert(is_array_sorted(g_runner.array_buffer, array_length));

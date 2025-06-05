@@ -71,9 +71,26 @@ void countingsort_validate_memory(size_t array_length, int64_t max_array_element
 	}
 }
 
-void countingsort(int64_t* array, size_t array_length, int64_t max_array_element, int64_t min_array_element) {
-	countingsort_validate_memory(array_length, max_array_element, min_array_element);
+void countingsort_find_max_min(int64_t* array, size_t array_length, int64_t* min, int64_t* max) {
+	*min = INT64_MAX;
+	*max = INT64_MIN;
 
+	for (size_t i = 0; i < array_length; i += 1) {
+		if (array[i] < *min) {
+			*min = array[i];
+		}
+		if (array[i] > *max) {
+			*max = array[i];
+		}
+	}
+}
+
+void countingsort(int64_t* array, size_t array_length) {
+	int64_t max_array_element;
+	int64_t min_array_element;
+	countingsort_find_max_min(array, array_length, &min_array_element, &max_array_element);
+
+	countingsort_validate_memory(array_length, max_array_element, min_array_element);
 	uint64_t* counts_array = g_countingsort_memory.counts_array;
 	int64_t* results_array = g_countingsort_memory.results_array;
 
@@ -205,12 +222,7 @@ void run_benchmark_iteration(size_t iteration) {
 		struct timespec end;
 
 		clock_gettime(CLOCK_MONOTONIC, &start);
-		RUNNER_ALGORITHM_FUNCTION(
-			g_runner.array_buffer,
-			array_length,
-			RUNNER_MAX_ARRAY_ELEMENT,
-			RUNNER_MIN_ARRAY_ELEMENT
-		);
+		RUNNER_ALGORITHM_FUNCTION(g_runner.array_buffer, array_length);
 		clock_gettime(CLOCK_MONOTONIC, &end);
 
 		assert(is_array_sorted(g_runner.array_buffer, array_length));
@@ -321,7 +333,7 @@ void run_elearning_mode(void) {
 	size_t numbers_count;
 	parse_input(input_line, &numbers, &numbers_count);
 
-	RUNNER_ALGORITHM_FUNCTION(numbers, numbers_count, RUNNER_MIN_ARRAY_ELEMENT, RUNNER_MAX_ARRAY_ELEMENT);
+	RUNNER_ALGORITHM_FUNCTION(numbers, numbers_count);
 	assert(is_array_sorted(numbers, numbers_count));
 
 	for (size_t i = 0; i < numbers_count; i++) {

@@ -90,9 +90,9 @@ try:
                     color=colors[i]
                 )
 
-        ax.set_title("Grafico")
-        ax.set_xlabel("Array Length")
-        ax.set_ylabel("Time (µs)")
+        ax.set_title("Comparison of Sorting Algorithms")
+        ax.set_xlabel("Array Length (n)")
+        ax.set_ylabel("Time (s)")
         ax.grid(True)
 
         if is_log_scale:

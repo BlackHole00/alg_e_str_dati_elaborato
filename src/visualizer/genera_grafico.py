@@ -86,7 +86,7 @@ try:
                 label = gruppo["titolo"] if gruppo["titolo"] else f"Gruppo {i+1}"
                 ax.plot(
                     gruppo["numero_elementi"], gruppo["tempi"],
-                    marker='o', linestyle='-', label=label,
+                    marker='o', linestyle='-', label=label, markersize=3,
                     color=colors[i]
                 )
 

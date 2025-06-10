@@ -55,11 +55,9 @@ void countingsort(int64_t* array, size_t array_length) {
 	int64_t min_array_element;
 	countingsort_find_max_min(array, array_length, &min_array_element, &max_array_element);
 
-	int64_t elements_count = max_array_element - min_array_element + 1;
-	uint64_t* counts_array = malloc(elements_count * sizeof(uint64_t));
-	int64_t* results_array = malloc(array_length * sizeof(int64_t));
-
 	size_t element_count = max_array_element - min_array_element + 1;
+	uint64_t* counts_array = malloc(element_count * sizeof(uint64_t));
+	int64_t* results_array = malloc(array_length * sizeof(int64_t));
 
 	memset(counts_array, 0, element_count * sizeof(int64_t));
 

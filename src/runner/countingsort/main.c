@@ -36,48 +36,6 @@ enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 // SORTING FUNCTION
 ////////////////////////////////////////////////////////////////////////////////
 
-// struct {
-// 	uint64_t* counts_array;
-// 	size_t counts_array_length;
-
-// 	int64_t* results_array;
-// 	size_t results_array_length;
-// } g_countingsort_memory = { 0 };
-
-// void countingsort_validate_memory(size_t array_length, int64_t max_array_element, int64_t min_array_element) {
-// 	int64_t elements_count = max_array_element - min_array_element + 1;
-
-// 	if (elements_count > g_countingsort_memory.counts_array_length) {
-// 		g_countingsort_memory.counts_array_length = elements_count;
-
-// 		if (g_countingsort_memory.counts_array != NULL) {
-// 			free(g_countingsort_memory.counts_array);
-// 		}
-
-// 		g_countingsort_memory.counts_array = malloc(
-// 			g_countingsort_memory.counts_array_length * sizeof(uint64_t)
-// 		);
-// 		assert(g_countingsort_memory.counts_array != NULL);
-// 	}
-
-// 	if (array_length > g_countingsort_memory.results_array_length) {
-// 		if (g_countingsort_memory.results_array_length * 2 < array_length) {
-// 			g_countingsort_memory.results_array_length = array_length;
-// 		} else {
-// 			g_countingsort_memory.results_array_length *= 2;
-// 		}
-
-// 		if (g_countingsort_memory.results_array != NULL) {
-// 			free(g_countingsort_memory.results_array);
-// 		}
-
-// 		g_countingsort_memory.results_array = malloc(
-// 			g_countingsort_memory.results_array_length * sizeof(int64_t)
-// 		);
-// 		assert(g_countingsort_memory.results_array != NULL);
-// 	}
-// }
-
 void countingsort_find_max_min(int64_t* array, size_t array_length, int64_t* min, int64_t* max) {
 	*min = INT64_MAX;
 	*max = INT64_MIN;
@@ -96,10 +54,6 @@ void countingsort(int64_t* array, size_t array_length) {
 	int64_t max_array_element;
 	int64_t min_array_element;
 	countingsort_find_max_min(array, array_length, &min_array_element, &max_array_element);
-
-	// countingsort_validate_memory(array_length, max_array_element, min_array_element);
-	// uint64_t* counts_array = g_countingsort_memory.counts_array;
-	// int64_t* results_array = g_countingsort_memory.results_array;
 
 	int64_t elements_count = max_array_element - min_array_element + 1;
 	uint64_t* counts_array = malloc(elements_count * sizeof(uint64_t));

@@ -25,6 +25,9 @@ jobs:
     - name: Generate Csvs
       run: ${{github.workspace}}/generate_csvs.sh
 
+    - name: Remove temporary results
+      run: rm ${{github.workspace}}/*.csv
+
     - name: Save csvs
       uses: actions/upload-artifact@v4
       with:

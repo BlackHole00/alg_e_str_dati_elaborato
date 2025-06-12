@@ -22,13 +22,19 @@ enum Runner_Mode { RUNNERMODE_BENCHMARK, RUNNERMODE_ELEARNING };
 #define RUNNER_MODE RUNNERMODE_BENCHMARK
 
 #define RUNNER_MAX_RELATIVE_ERROR 0.00001
+#define RUNNER_TEST_COUNT 250
+
 #define RUNNER_STARTING_ARRAY_LENGTH 100
 #define RUNNER_ENDING_ARRAY_LENGTH 100000
 #define RUNNER_MIN_ARRAY_ELEMENT 10
-#define RUNNER_MAX_ARRAY_ELEMENT 1000000
-#define RUNNER_TEST_COUNT 250
+#define RUNNER_MAX_ARRAY_ELEMENT 100000 + RUNNER_MIN_ARRAY_ELEMENT
 
-#define RUNNER_OUTPUT_FILE "./results/quicksort3way.csv"
+#define RUNNER_ARRAY_LENGTH 10000
+#define RUNNER_STARTING_ELEMENT_RANGE 10
+#define RUNNER_ENDING_ELEMENT_RANGE 1000000
+
+#define RUNNER_ARRAY_LENGTH_OUTPUT_FILE "./results/quicksort3way.array_length.csv"
+#define RUNNER_INPUT_RANGE_OUTPUT_FILE "./results/quicksort3way.input_range.csv"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,26 +86,49 @@ struct {
 	double clock_precision;
 	double min_execution_time;
 
-	double constant_a;
-	double constant_b;
+	double length_constant_a;
+	double length_constant_b;
+	double input_range_constant_a;
+	double input_range_constant_b;
 
 	int64_t* array_buffer;
 	size_t array_buffer_size;
 
-	FILE* output_file;
+	FILE* output_array_length_file;
+	FILE* output_input_range_file;
 } g_runner;
 
 size_t calculate_array_length(size_t iteration) {
-	double b_power = pow(g_runner.constant_b, (double)iteration);
-	return (size_t)(g_runner.constant_a * b_power);
+	double b_power = pow(g_runner.length_constant_b, (double)iteration);
+	return (size_t)(g_runner.length_constant_a * b_power);
 }
 
-int64_t calculate_random_array_element(void) {
-	return RUNNER_MIN_ARRAY_ELEMENT + rand() % (RUNNER_MAX_ARRAY_ELEMENT - RUNNER_MIN_ARRAY_ELEMENT + 1);
+int64_t calculate_input_range(size_t iteration) {
+	double b_power = pow(g_runner.input_range_constant_b, (double)iteration);
+	return (int64_t)(g_runner.input_range_constant_a * b_power);
 }
 
-bool is_array_sorted(int64_t* array, size_t array_count) {
-	for (size_t i = 1; i < array_count; i++) {
+int64_t calculate_random_array_element(int64_t minimum_element, int64_t maximum_element) {
+	return minimum_element + rand() % (maximum_element - minimum_element + 1);
+}
+
+void randomize_array(int64_t* array, size_t array_length, int64_t minimum_element, int64_t maximum_element) {
+	for (size_t i = 0; i < array_length; i++) {
+		g_runner.array_buffer[i] = calculate_random_array_element(minimum_element, maximum_element);
+	}
+
+	size_t max_element_index = rand() % array_length;
+	g_runner.array_buffer[max_element_index] = maximum_element;
+
+	size_t min_element_index;
+	do {
+		min_element_index = rand() % array_length;
+	} while(array_length != 1 && min_element_index == max_element_index);
+	g_runner.array_buffer[min_element_index] = minimum_element;
+}
+
+bool is_array_sorted(int64_t* array, size_t array_length) {
+	for (size_t i = 1; i < array_length; i++) {
 		if (array[i] < array[i - 1]) {
 			return false;
 		}
@@ -132,26 +161,32 @@ void init_runner(void) {
 
 	calculate_clock_precision();
 
-	g_runner.constant_a = (double)RUNNER_STARTING_ARRAY_LENGTH;
-	g_runner.constant_b = pow(
+	g_runner.length_constant_a = (double)RUNNER_STARTING_ARRAY_LENGTH;
+	g_runner.length_constant_b = pow(
 		(double)RUNNER_ENDING_ARRAY_LENGTH / (double)RUNNER_STARTING_ARRAY_LENGTH,
 		1.0 / (double)(RUNNER_TEST_COUNT - 1)
 	);
-	printf("%f\n", g_runner.constant_a);
-	printf("%f\n", g_runner.constant_b);
+
+	g_runner.input_range_constant_a = (double)RUNNER_STARTING_ELEMENT_RANGE;
+	g_runner.input_range_constant_b = pow(
+		(double)RUNNER_ENDING_ELEMENT_RANGE / (double)RUNNER_STARTING_ELEMENT_RANGE,
+		1.0 / (double)(RUNNER_TEST_COUNT - 1)
+	);
 
 	g_runner.array_buffer = malloc(sizeof(int64_t) * RUNNER_ENDING_ARRAY_LENGTH);
 	assert(g_runner.array_buffer != NULL);
 	g_runner.array_buffer_size = RUNNER_ENDING_ARRAY_LENGTH;
 
-	g_runner.output_file = fopen(RUNNER_OUTPUT_FILE, "w");
-	assert(g_runner.output_file != NULL);
+	g_runner.output_array_length_file = fopen(RUNNER_ARRAY_LENGTH_OUTPUT_FILE, "w");
+	assert(g_runner.output_array_length_file != NULL);
+	g_runner.output_input_range_file = fopen(RUNNER_INPUT_RANGE_OUTPUT_FILE, "w");
+	assert(g_runner.output_input_range_file != NULL);
 }
 
-void run_benchmark_iteration(size_t iteration) {
+void run_array_length_benchmark_iteration(size_t iteration) {
 	size_t array_length = calculate_array_length(iteration);
 
-	printf("Benchmarking iteration %llu (%llu elements)...\n",
+	printf("Benchmarking array length iteration %llu (%llu elements)...\n",
 		(unsigned long long)iteration + 1,
 		(unsigned long long)array_length
 	);
@@ -159,18 +194,12 @@ void run_benchmark_iteration(size_t iteration) {
 	double total_duration = 0.0;
 	size_t sorted_arrays = 0;
 	do {
-		for (size_t i = 0; i < array_length; i++) {
-			g_runner.array_buffer[i] = calculate_random_array_element();
-		}
-
-		size_t max_element_index = rand() % array_length;
-		g_runner.array_buffer[max_element_index] = RUNNER_MAX_ARRAY_ELEMENT;
-
-		size_t min_element_index;
-		do {
-			min_element_index = rand() % array_length;
-		} while(array_length != 1 && min_element_index == max_element_index);
-		g_runner.array_buffer[min_element_index] = RUNNER_MIN_ARRAY_ELEMENT;
+		randomize_array(
+			g_runner.array_buffer,
+			array_length,
+			RUNNER_MIN_ARRAY_ELEMENT,
+			RUNNER_MAX_ARRAY_ELEMENT
+		);
 
 		struct timespec start;
 		struct timespec end;
@@ -187,7 +216,7 @@ void run_benchmark_iteration(size_t iteration) {
 
 	double average_time = total_duration / (double)sorted_arrays;
 
-	printf("Benchmarked iteration %llu (%llu elements):\n"
+	printf("Benchmarked array length iteration %llu (%llu elements):\n"
 		"\t-total time: %.17fs\n"
 		"\t-sorted arrays: %llu\n"
 		"\t-averate time: %.17fs\n\n",
@@ -198,22 +227,83 @@ void run_benchmark_iteration(size_t iteration) {
 		average_time
 	);
 
-	fprintf(g_runner.output_file, "%llu, %.17f\n",
+	fprintf(g_runner.output_array_length_file, "%llu, %.17f\n",
 		(unsigned long long)array_length,
 		average_time
 	);
-	fflush(g_runner.output_file);
+	fflush(g_runner.output_array_length_file);
+}
+
+void run_input_range_benchmark_iteration(size_t iteration) {
+	int64_t input_range = calculate_input_range(iteration);
+	int64_t minimum_element = RUNNER_MIN_ARRAY_ELEMENT;
+	int64_t maximum_element = RUNNER_MIN_ARRAY_ELEMENT + input_range;
+
+	printf("Benchmarking input range iteration %llu (%llu input range: %llu-%llu)...\n",
+		(unsigned long long)iteration + 1,
+		(unsigned long long)input_range,
+		(unsigned long long)minimum_element,
+		(unsigned long long)maximum_element
+	);
+
+	double total_duration = 0.0;
+	size_t sorted_arrays = 0;
+	do {
+		randomize_array(
+			g_runner.array_buffer,
+			RUNNER_ARRAY_LENGTH,
+			minimum_element,
+			maximum_element
+		);
+
+		struct timespec start;
+		struct timespec end;
+
+		clock_gettime(CLOCK_MONOTONIC, &start);
+		RUNNER_ALGORITHM_FUNCTION(g_runner.array_buffer, RUNNER_ARRAY_LENGTH);
+		clock_gettime(CLOCK_MONOTONIC, &end);
+
+		assert(is_array_sorted(g_runner.array_buffer, RUNNER_ARRAY_LENGTH));
+
+		total_duration += timespec_duration(start, end);
+		sorted_arrays += 1;
+	} while(total_duration < g_runner.min_execution_time);
+
+	double average_time = total_duration / (double)sorted_arrays;
+
+	printf("Benchmarked input range iteration %llu (%llu input range: %llu-%llu):\n"
+		"\t-total time: %.17fs\n"
+		"\t-sorted arrays: %llu\n"
+		"\t-averate time: %.17fs\n\n",
+		(unsigned long long)iteration + 1,
+		(unsigned long long)input_range,
+		(unsigned long long)minimum_element,
+		(unsigned long long)maximum_element,
+		total_duration,
+		(unsigned long long)sorted_arrays,
+		average_time
+	);
+
+	fprintf(g_runner.output_input_range_file, "%llu, %.17f\n",
+		(unsigned long long)input_range,
+		average_time
+	);
+	fflush(g_runner.output_input_range_file);
 }
 
 void run_benchmarks(void) {
 	for (size_t iteration = 0; iteration < RUNNER_TEST_COUNT; iteration += 1) {
-		run_benchmark_iteration(iteration);
+		run_array_length_benchmark_iteration(iteration);
+	}
+	for (size_t iteration = 0; iteration < RUNNER_TEST_COUNT; iteration += 1) {
+		run_input_range_benchmark_iteration(iteration);
 	}
 }
 
 void terminate_runner(void) {
 	free(g_runner.array_buffer);
-	fclose(g_runner.output_file);
+	fclose(g_runner.output_array_length_file);
+	fclose(g_runner.output_input_range_file);
 }
 
 void run_benchmark_mode(void) {

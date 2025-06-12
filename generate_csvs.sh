@@ -5,9 +5,9 @@ set -e
 if [ ! -d build ]; then
 	mkdir build
 
-	pushd build
+	cd build
 	cmake .. -DCMAKE_BUILD_TYPE=Release
-	popd
+	cd ..
 fi
 
 cmake --build build --config Release

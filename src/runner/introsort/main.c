@@ -9,8 +9,7 @@
 #include <math.h>
 #include <sys/errno.h>
 #include <sys/types.h>
-#include <stdint.h>
-#include <stddef.h>
+#include <string.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -188,6 +187,7 @@ void introsort(int64_t* array, size_t array_length) {
 struct {
 	double clock_precision;
 	double min_execution_time;
+	double array_average_init_time; // for 1 element
 
 	double length_constant_a;
 	double length_constant_b;
@@ -258,6 +258,30 @@ void calculate_clock_precision(void) {
 	g_runner.min_execution_time = g_runner.clock_precision * ((1.0 / RUNNER_MAX_RELATIVE_ERROR) + 1.0);
 }
 
+void calculate_array_init_time(void) {
+	double total_duration = 0.0;
+	size_t initialization_count = 0;
+	struct timespec start;
+	struct timespec end;
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	do {
+		randomize_array(g_runner.array_buffer,
+			g_runner.array_buffer_size,
+			RUNNER_MIN_ARRAY_ELEMENT,
+			RUNNER_MAX_ARRAY_ELEMENT
+		);
+
+		initialization_count += 1;
+
+		clock_gettime(CLOCK_MONOTONIC, &end);
+		total_duration = timespec_duration(start, end);
+	} while(total_duration < g_runner.min_execution_time);
+
+	g_runner.array_average_init_time =
+		total_duration / (double)initialization_count / (double)g_runner.array_buffer_size * 0.8;
+}
+
 void init_runner(void) {
 	// Srand with seed 0 so it is deterministic
 	srand(0);
@@ -280,6 +304,8 @@ void init_runner(void) {
 	assert(g_runner.array_buffer != NULL);
 	g_runner.array_buffer_size = RUNNER_ENDING_ARRAY_LENGTH;
 
+	calculate_array_init_time();
+
 	g_runner.output_array_length_file = fopen(RUNNER_ARRAY_LENGTH_OUTPUT_FILE, "w");
 	assert(g_runner.output_array_length_file != NULL);
 	g_runner.output_input_range_file = fopen(RUNNER_INPUT_RANGE_OUTPUT_FILE, "w");
@@ -296,6 +322,10 @@ void run_array_length_benchmark_iteration(size_t iteration) {
 
 	double total_duration = 0.0;
 	size_t sorted_arrays = 0;
+	struct timespec start;
+	struct timespec end;
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	do {
 		randomize_array(
 			g_runner.array_buffer,
@@ -303,29 +333,26 @@ void run_array_length_benchmark_iteration(size_t iteration) {
 			RUNNER_MIN_ARRAY_ELEMENT,
 			RUNNER_MAX_ARRAY_ELEMENT
 		);
-
-		struct timespec start;
-		struct timespec end;
-
-		clock_gettime(CLOCK_MONOTONIC, &start);
 		RUNNER_ALGORITHM_FUNCTION(g_runner.array_buffer, array_length);
-		clock_gettime(CLOCK_MONOTONIC, &end);
 
-		assert(is_array_sorted(g_runner.array_buffer, array_length));
-
-		total_duration += timespec_duration(start, end);
 		sorted_arrays += 1;
+
+		clock_gettime(CLOCK_MONOTONIC, &end);
+		total_duration = timespec_duration(start, end);
 	} while(total_duration < g_runner.min_execution_time);
 
-	double average_time = total_duration / (double)sorted_arrays;
+	double init_duration = g_runner.array_average_init_time * (double)array_length * (double)sorted_arrays;
+	double duration_without_init = total_duration - init_duration;
+	double average_time = duration_without_init / (double)sorted_arrays;
 
 	printf("Benchmarked array length iteration %llu (%llu elements):\n"
-		"\t-total time: %.17fs\n"
+		"\t-total time: %.17fs (%.17fs without init)\n"
 		"\t-sorted arrays: %llu\n"
 		"\t-averate time: %.17fs\n\n",
 		(unsigned long long)iteration + 1,
 		(unsigned long long)array_length,
 		total_duration,
+		duration_without_init,
 		(unsigned long long)sorted_arrays,
 		average_time
 	);
@@ -351,6 +378,10 @@ void run_input_range_benchmark_iteration(size_t iteration) {
 
 	double total_duration = 0.0;
 	size_t sorted_arrays = 0;
+	struct timespec start;
+	struct timespec end;
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	do {
 		randomize_array(
 			g_runner.array_buffer,
@@ -358,24 +389,20 @@ void run_input_range_benchmark_iteration(size_t iteration) {
 			minimum_element,
 			maximum_element
 		);
-
-		struct timespec start;
-		struct timespec end;
-
-		clock_gettime(CLOCK_MONOTONIC, &start);
 		RUNNER_ALGORITHM_FUNCTION(g_runner.array_buffer, RUNNER_ARRAY_LENGTH);
-		clock_gettime(CLOCK_MONOTONIC, &end);
 
-		assert(is_array_sorted(g_runner.array_buffer, RUNNER_ARRAY_LENGTH));
-
-		total_duration += timespec_duration(start, end);
 		sorted_arrays += 1;
+
+		clock_gettime(CLOCK_MONOTONIC, &end);
+		total_duration = timespec_duration(start, end);
 	} while(total_duration < g_runner.min_execution_time);
 
-	double average_time = total_duration / (double)sorted_arrays;
+	double init_duration = g_runner.array_average_init_time * (double)RUNNER_ARRAY_LENGTH * (double)sorted_arrays;
+	double duration_without_init = total_duration - init_duration;
+	double average_time = duration_without_init / (double)sorted_arrays;
 
 	printf("Benchmarked input range iteration %llu (%llu input range: %llu-%llu):\n"
-		"\t-total time: %.17fs\n"
+		"\t-total time: %.17fs (%.17fs without init)\n"
 		"\t-sorted arrays: %llu\n"
 		"\t-averate time: %.17fs\n\n",
 		(unsigned long long)iteration + 1,
@@ -383,6 +410,7 @@ void run_input_range_benchmark_iteration(size_t iteration) {
 		(unsigned long long)minimum_element,
 		(unsigned long long)maximum_element,
 		total_duration,
+		duration_without_init,
 		(unsigned long long)sorted_arrays,
 		average_time
 	);

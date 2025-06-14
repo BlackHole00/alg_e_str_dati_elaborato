@@ -1,6 +1,6 @@
 # Elaborato di Algoritmi e Strutture Dati Laboratorio
 A cura di:
-- Nassineva Filippo
+- Nassivera Filippo
 - Rossetto Mattia
 - Viciguerra Francesco
 

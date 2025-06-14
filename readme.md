@@ -1,5 +1,8 @@
 # Elaborato di Algoritmi e Strutture Dati Laboratorio
-TODO
+A cura di:
+- Nassineva Filippo
+- Rossetto Mattia
+- Viciguerra Francesco
 
 # Building
 Il progetto usa il linguaggio `C99` ed usa il sistema di build `CMake`. Il progetto richiede quindi di aver installati ed aggiunti al path i seguenti programmi:
